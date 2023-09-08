@@ -1,1 +1,1 @@
-# python-twitter-scraper
+# selenium-twitter-scraper
