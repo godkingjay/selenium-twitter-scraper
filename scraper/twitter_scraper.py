@@ -270,7 +270,8 @@ It may be due to the following:
             "Retweets": [tweet[6] for tweet in self.data],
             "Likes": [tweet[7] for tweet in self.data],
             "Analytics": [tweet[8] for tweet in self.data],
-            "Profile Image": [tweet[9] for tweet in self.data],
+            "Tags": [tweet[9] for tweet in self.data],
+            "Profile Image": [tweet[10] for tweet in self.data],
         }
 
         df = pd.DataFrame(data)

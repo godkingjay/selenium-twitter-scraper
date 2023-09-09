@@ -81,6 +81,16 @@ class Tweet:
         except NoSuchElementException:
             self.profile_img = ""
 
+        try:
+            self.tags = card.find_elements(
+                "xpath",
+                './/a[contains(@href, "src=hashtag_click")]',
+            )
+
+            self.tags = [tag.text for tag in self.tags]
+        except NoSuchElementException:
+            self.tags = []
+
         self.tweet = (
             self.user,
             self.handle,
@@ -91,6 +101,7 @@ class Tweet:
             self.retweet_cnt,
             self.like_cnt,
             self.analytics_cnt,
+            self.tags,
             self.profile_img,
         )
 
