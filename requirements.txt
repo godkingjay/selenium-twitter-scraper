@@ -1,0 +1,5 @@
+fake_headers==1.0.2
+pandas==2.0.3
+python-dotenv==1.0.0
+selenium==4.12.0
+webdriver_manager==4.0.0
