@@ -10,7 +10,11 @@ from fake_headers import Headers
 from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, WebDriverException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+    WebDriverException,
+)
 
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -20,7 +24,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 
 
-class Twitter_Scraper():
+class Twitter_Scraper:
     def __init__(self, username, password, max_tweets=50):
         print("Initializing Twitter Scraper...")
         self.username = username
@@ -36,17 +40,17 @@ class Twitter_Scraper():
 
     def _get_driver(self):
         print("Setup WebDriver...")
-        header = Headers().generate()['User-Agent']
+        header = Headers().generate()["User-Agent"]
 
         browser_option = ChromeOptions()
-        browser_option.add_argument('--no-sandbox')
+        browser_option.add_argument("--no-sandbox")
         browser_option.add_argument("--disable-dev-shm-usage")
-        browser_option.add_argument('--ignore-certificate-errors')
-        browser_option.add_argument('--disable-gpu')
-        browser_option.add_argument('--log-level=3')
-        browser_option.add_argument('--disable-notifications')
-        browser_option.add_argument('--disable-popup-blocking')
-        browser_option.add_argument('--user-agent={}'.format(header))
+        browser_option.add_argument("--ignore-certificate-errors")
+        browser_option.add_argument("--disable-gpu")
+        browser_option.add_argument("--log-level=3")
+        browser_option.add_argument("--disable-notifications")
+        browser_option.add_argument("--disable-popup-blocking")
+        browser_option.add_argument("--user-agent={}".format(header))
 
         # For Hiding Browser
         browser_option.add_argument("--headless")
@@ -62,8 +66,7 @@ class Twitter_Scraper():
             try:
                 print("Downloading ChromeDriver...")
                 chromedriver_path = ChromeDriverManager().install()
-                chrome_service = ChromeService(
-                    executable_path=chromedriver_path)
+                chrome_service = ChromeService(executable_path=chromedriver_path)
 
                 print("Initializing ChromeDriver...")
                 driver = webdriver.Chrome(
@@ -96,8 +99,7 @@ class Twitter_Scraper():
         while True:
             try:
                 username = self.driver.find_element(
-                    "xpath",
-                    "//input[@autocomplete='username']"
+                    "xpath", "//input[@autocomplete='username']"
                 )
 
                 username.send_keys(self.username)
@@ -108,18 +110,19 @@ class Twitter_Scraper():
                 input_attempt += 1
                 if input_attempt >= 3:
                     print()
-                    print("""
-There was an error inputting the username.
+                    print(
+                        """There was an error inputting the username.
 
 It may be due to the following:
 - Internet connection is unstable
 - Username is incorrect
-- Twitter is experiencing unusual activity
-                          """)
+- Twitter is experiencing unusual activity"""
+                    )
                     self.driver.quit()
                     sys.exit(1)
                 else:
                     print("Re-attempting to input username...")
+                    sleep(2)
 
     def _input_unusual_activity(self):
         input_attempt = 0
@@ -127,8 +130,7 @@ It may be due to the following:
         while True:
             try:
                 unusual_activity = self.driver.find_element(
-                    "xpath",
-                    "//input[@data-testid='ocfEnterTextTextInput']"
+                    "xpath", "//input[@data-testid='ocfEnterTextTextInput']"
                 )
                 unusual_activity.send_keys(self.username)
                 unusual_activity.send_keys(Keys.RETURN)
@@ -145,8 +147,7 @@ It may be due to the following:
         while True:
             try:
                 password = self.driver.find_element(
-                    "xpath",
-                    "//input[@autocomplete='current-password']"
+                    "xpath", "//input[@autocomplete='current-password']"
                 )
 
                 password.send_keys(self.password)
@@ -157,18 +158,19 @@ It may be due to the following:
                 input_attempt += 1
                 if input_attempt >= 3:
                     print()
-                    print("""
-There was an error inputting the password.
+                    print(
+                        """There was an error inputting the password.
 
 It may be due to the following:
 - Internet connection is unstable
 - Password is incorrect
-- Twitter is experiencing unusual activity
-                          """)
+- Twitter is experiencing unusual activity"""
+                    )
                     self.driver.quit()
                     sys.exit(1)
                 else:
                     print("Re-attempting to input password...")
+                    sleep(2)
 
     def go_to_home(self):
         self.driver.get("https://twitter.com/home")
@@ -177,8 +179,7 @@ It may be due to the following:
 
     def get_tweets(self):
         self.tweet_cards = self.driver.find_elements(
-            'xpath',
-            '//article[@data-testid="tweet"]'
+            "xpath", '//article[@data-testid="tweet"]'
         )
         pass
 
@@ -191,8 +192,8 @@ It may be due to the following:
         print("Scraping Tweets...")
         self.progress.print_progress(0)
 
-        try:
-            while self.scroller.scrolling:
+        while self.scroller.scrolling:
+            try:
                 self.get_tweets()
 
                 for card in self.tweet_cards[-15:]:
@@ -235,11 +236,15 @@ It may be due to the following:
                     else:
                         self.scroller.last_position = self.scroller.current_position
                         break
+            except StaleElementReferenceException:
+                callback()
+                sleep(2)
 
-            print("\n")
+        print("\n")
+
+        if len(self.data) >= self.max_tweets:
             print("Scraping Complete")
-        except StaleElementReferenceException:
-            print("\n")
+        else:
             print("Scraping Incomplete")
 
         print("Tweets: {} out of {}\n".format(len(self.data), self.max_tweets))
@@ -249,29 +254,29 @@ It may be due to the following:
     def save_to_csv(self):
         print("Saving Tweets to CSV...")
         now = datetime.now()
-        folder_path = './tweets/'
+        folder_path = "./tweets/"
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
             print("Created Folder: {}".format(folder_path))
 
         data = {
-            'Name': [tweet[0] for tweet in self.data],
-            'Handle': [tweet[1] for tweet in self.data],
-            'Timestamp': [tweet[2] for tweet in self.data],
-            'Verified': [tweet[3] for tweet in self.data],
-            'Content': [tweet[4] for tweet in self.data],
-            'Comments': [tweet[5] for tweet in self.data],
-            'Retweets': [tweet[6] for tweet in self.data],
-            'Likes': [tweet[7] for tweet in self.data],
-            'Analytics': [tweet[8] for tweet in self.data],
-            'Profile Image': [tweet[9] for tweet in self.data],
+            "Name": [tweet[0] for tweet in self.data],
+            "Handle": [tweet[1] for tweet in self.data],
+            "Timestamp": [tweet[2] for tweet in self.data],
+            "Verified": [tweet[3] for tweet in self.data],
+            "Content": [tweet[4] for tweet in self.data],
+            "Comments": [tweet[5] for tweet in self.data],
+            "Retweets": [tweet[6] for tweet in self.data],
+            "Likes": [tweet[7] for tweet in self.data],
+            "Analytics": [tweet[8] for tweet in self.data],
+            "Profile Image": [tweet[9] for tweet in self.data],
         }
 
         df = pd.DataFrame(data)
 
         current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-        file_path = f'{folder_path}{current_time}_tweets_1-{len(self.data)}.csv'
+        file_path = f"{folder_path}{current_time}_tweets_1-{len(self.data)}.csv"
         df.to_csv(file_path, index=False)
 
         print("CSV Saved: {}".format(file_path))

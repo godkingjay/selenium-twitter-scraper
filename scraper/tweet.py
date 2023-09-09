@@ -7,23 +7,20 @@ class Tweet:
         self.card = card
 
         self.user = card.find_element(
-            'xpath',
-            './/div[@data-testid="User-Name"]//span'
+            "xpath", './/div[@data-testid="User-Name"]//span'
         ).text
 
         try:
             self.handle = card.find_element(
-                'xpath',
-                './/span[contains(text(), "@")]'
+                "xpath", './/span[contains(text(), "@")]'
             ).text
         except NoSuchElementException:
             return
 
         try:
-            self.date_time = card.find_element(
-                'xpath',
-                './/time'
-            ).get_attribute('datetime')
+            self.date_time = card.find_element("xpath", ".//time").get_attribute(
+                "datetime"
+            )
 
             if self.date_time is not None:
                 self.is_ad = False
@@ -33,8 +30,7 @@ class Tweet:
 
         try:
             card.find_element(
-                'xpath',
-                './/*[local-name()="svg" and @data-testid="icon-verified"]'
+                "xpath", './/*[local-name()="svg" and @data-testid="icon-verified"]'
             )
 
             self.verified = True
@@ -43,8 +39,8 @@ class Tweet:
 
         self.content = ""
         contents = card.find_elements(
-            'xpath',
-            './/div[@data-testid="tweetText"]/span | .//div[@data-testid="tweetText"]/a'
+            "xpath",
+            './/div[@data-testid="tweetText"]/span | .//div[@data-testid="tweetText"]/a',
         )
 
         for index, content in enumerate(contents):
@@ -52,43 +48,38 @@ class Tweet:
 
         try:
             self.reply_cnt = card.find_element(
-                'xpath',
-                './/div[@data-testid="reply"]//span'
+                "xpath", './/div[@data-testid="reply"]//span'
             ).text
         except NoSuchElementException:
-            self.reply_cnt = '0'
+            self.reply_cnt = "0"
 
         try:
             self.retweet_cnt = card.find_element(
-                'xpath',
-                './/div[@data-testid="retweet"]//span'
+                "xpath", './/div[@data-testid="retweet"]//span'
             ).text
         except NoSuchElementException:
-            self.retweet_cnt = '0'
+            self.retweet_cnt = "0"
 
         try:
             self.like_cnt = card.find_element(
-                'xpath',
-                './/div[@data-testid="like"]//span'
+                "xpath", './/div[@data-testid="like"]//span'
             ).text
         except NoSuchElementException:
-            self.like_cnt = '0'
+            self.like_cnt = "0"
 
         try:
             self.analytics_cnt = card.find_element(
-                'xpath',
-                './/a[contains(@href, "/analytics")]//span'
+                "xpath", './/a[contains(@href, "/analytics")]//span'
             ).text
         except NoSuchElementException:
-            self.analytics_cnt = '0'
+            self.analytics_cnt = "0"
 
         try:
             self.profile_img = card.find_element(
-                'xpath',
-                './/div[@data-testid="Tweet-User-Avatar"]//img'
-            ).get_attribute('src')
+                "xpath", './/div[@data-testid="Tweet-User-Avatar"]//img'
+            ).get_attribute("src")
         except NoSuchElementException:
-            self.profile_img = ''
+            self.profile_img = ""
 
         self.tweet = (
             self.user,
@@ -100,7 +91,7 @@ class Tweet:
             self.retweet_cnt,
             self.like_cnt,
             self.analytics_cnt,
-            self.profile_img
+            self.profile_img,
         )
 
         pass
