@@ -6,9 +6,12 @@ class Tweet:
     def __init__(self, card: Chrome) -> None:
         self.card = card
 
-        self.user = card.find_element(
-            "xpath", './/div[@data-testid="User-Name"]//span'
-        ).text
+        try:
+            self.user = card.find_element(
+                "xpath", './/div[@data-testid="User-Name"]//span'
+            ).text
+        except NoSuchElementException:
+            return
 
         try:
             self.handle = card.find_element(

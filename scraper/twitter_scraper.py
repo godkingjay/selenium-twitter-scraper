@@ -239,6 +239,9 @@ It may be due to the following:
             except StaleElementReferenceException:
                 callback()
                 sleep(2)
+            except Exception as e:
+                print(f"Error scraping tweets: {e}")
+                break
 
         print("\n")
 
