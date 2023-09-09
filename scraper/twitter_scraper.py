@@ -117,7 +117,7 @@ It may be due to the following:
 - Twitter is experiencing unusual activity
                           """)
                     self.driver.quit()
-                    exit()
+                    sys.exit(1)
                 else:
                     print("Re-attempting to input username...")
 
@@ -166,7 +166,7 @@ It may be due to the following:
 - Twitter is experiencing unusual activity
                           """)
                     self.driver.quit()
-                    exit()
+                    sys.exit(1)
                 else:
                     print("Re-attempting to input password...")
 
@@ -263,7 +263,9 @@ It may be due to the following:
             'Content': [tweet[4] for tweet in self.data],
             'Comments': [tweet[5] for tweet in self.data],
             'Retweets': [tweet[6] for tweet in self.data],
-            'Likes': [tweet[7] for tweet in self.data]
+            'Likes': [tweet[7] for tweet in self.data],
+            'Analytics': [tweet[8] for tweet in self.data],
+            'Profile Image': [tweet[9] for tweet in self.data],
         }
 
         df = pd.DataFrame(data)

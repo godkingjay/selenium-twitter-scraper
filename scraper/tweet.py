@@ -1,6 +1,7 @@
 from selenium.webdriver import Chrome
 from selenium.common.exceptions import NoSuchElementException
 
+
 class Tweet:
     def __init__(self, card: Chrome) -> None:
         self.card = card
@@ -73,6 +74,22 @@ class Tweet:
         except NoSuchElementException:
             self.like_cnt = '0'
 
+        try:
+            self.analytics_cnt = card.find_element(
+                'xpath',
+                './/a[contains(@href, "/analytics")]//span'
+            ).text
+        except NoSuchElementException:
+            self.analytics_cnt = '0'
+
+        try:
+            self.profile_img = card.find_element(
+                'xpath',
+                './/div[@data-testid="Tweet-User-Avatar"]//img'
+            ).get_attribute('src')
+        except NoSuchElementException:
+            self.profile_img = ''
+
         self.tweet = (
             self.user,
             self.handle,
@@ -81,7 +98,9 @@ class Tweet:
             self.content,
             self.reply_cnt,
             self.retweet_cnt,
-            self.like_cnt
+            self.like_cnt,
+            self.analytics_cnt,
+            self.profile_img
         )
 
         pass
