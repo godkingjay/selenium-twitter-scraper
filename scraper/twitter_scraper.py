@@ -52,20 +52,29 @@ class Twitter_Scraper():
         browser_option.add_argument("--headless")
 
         try:
-            print("Downloading ChromeDriver...")
-            chromedriver_path = ChromeDriverManager().install()
-            chrome_service = ChromeService(executable_path=chromedriver_path)
-
             print("Initializing ChromeDriver...")
             driver = webdriver.Chrome(
-                service=chrome_service,
                 options=browser_option,
             )
 
             return driver
-        except Exception as e:
-            print(f"Error setting up WebDriver: {e}")
-            sys.exit(1)
+        except WebDriverException:
+            try:
+                print("Downloading ChromeDriver...")
+                chromedriver_path = ChromeDriverManager().install()
+                chrome_service = ChromeService(
+                    executable_path=chromedriver_path)
+
+                print("Initializing ChromeDriver...")
+                driver = webdriver.Chrome(
+                    service=chrome_service,
+                    options=browser_option,
+                )
+
+                return driver
+            except Exception as e:
+                print(f"Error setting up WebDriver: {e}")
+                sys.exit(1)
 
     def _login(self):
         print("Logging in to Twitter...")
@@ -76,6 +85,9 @@ class Twitter_Scraper():
         self._input_username()
         self._input_unusual_activity()
         self._input_password()
+
+        print("Login Successful")
+        print()
         pass
 
     def _input_username(self):
@@ -96,7 +108,7 @@ class Twitter_Scraper():
                 input_attempt += 1
                 if input_attempt >= 3:
                     print()
-                    print(""""
+                    print("""
 There was an error inputting the username.
 
 It may be due to the following:
@@ -177,8 +189,6 @@ It may be due to the following:
         callback()
 
         print("Scraping Tweets...")
-        print()
-
         self.progress.print_progress(0)
 
         try:
