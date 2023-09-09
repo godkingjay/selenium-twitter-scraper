@@ -34,18 +34,85 @@ def main():
 
         print()
 
-        parser = argparse.ArgumentParser(description="Twitter Scraper")
+        parser = argparse.ArgumentParser(
+            add_help=True,
+            usage="python scraper [option] ... [arg] ...",
+            description="Twitter Scraper is a tool that allows you to scrape tweets from twitter without using Twitter's API.",
+        )
+
         parser.add_argument(
+            "-t",
             "--tweets",
             type=int,
             default=50,
             help="Number of tweets to scrape (default: 50)",
         )
+
+        parser.add_argument(
+            "-u",
+            "--username",
+            type=str,
+            default=None,
+            help="Twitter username. Scrape tweets from a user's profile.",
+        )
+
+        parser.add_argument(
+            "-ht",
+            "--hashtag",
+            type=str,
+            default=None,
+            help="Twitter hashtag. Scrape tweets from a hashtag.",
+        )
+
+        parser.add_argument(
+            "-q",
+            "--query",
+            type=str,
+            default=None,
+            help="Twitter query or search. Scrape tweets from a query or search.",
+        )
+
+        parser.add_argument(
+            "--latest",
+            action="store_true",
+            help="Scrape latest tweets",
+        )
+
+        parser.add_argument(
+            "--top",
+            action="store_true",
+            help="Scrape top tweets",
+        )
+
         args = parser.parse_args()
+
+        tweet_type_args = []
+
+        if args.username is not None:
+            tweet_type_args.append(args.username)
+        if args.hashtag is not None:
+            tweet_type_args.append(args.hashtag)
+        if args.query is not None:
+            tweet_type_args.append(args.query)
+
+        if len(tweet_type_args) > 1:
+            print("Please specify only one of --username, --hashtag, or --query.")
+            sys.exit(1)
+
+        if args.latest and args.top:
+            print("Please specify either --latest or --top. Not both.")
+            sys.exit(1)
 
         if USER_UNAME is not None and USER_PASSWORD is not None:
             scraper = Twitter_Scraper(
-                username=USER_UNAME, password=USER_PASSWORD, max_tweets=args.tweets
+                username=USER_UNAME,
+                password=USER_PASSWORD,
+                max_tweets=args.tweets,
+                scrape_username=args.username,
+                scrape_hashtag=args.hashtag,
+                scrape_query=args.query,
+                scrape_latest=args.latest,
+                scrape_top=args.top,
             )
 
             scraper.scrape_tweets()

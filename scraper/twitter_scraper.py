@@ -25,11 +25,31 @@ TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 
 
 class Twitter_Scraper:
-    def __init__(self, username, password, max_tweets=50):
+    def __init__(
+        self,
+        username,
+        password,
+        max_tweets=50,
+        scrape_username=None,
+        scrape_hashtag=None,
+        scrape_query=None,
+        scrape_latest=True,
+        scrape_top=False,
+    ):
         print("Initializing Twitter Scraper...")
         self.username = username
         self.password = password
         self.data = []
+        self.scraper_details = {
+            "type": None,
+            "username": scrape_username,
+            "hashtag": str(scrape_hashtag).replace("#", "")
+            if scrape_hashtag is not None
+            else None,
+            "query": scrape_query,
+            "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
+        }
+        self.router = self.go_to_home
         self.tweet_ids = set()
         self.max_tweets = max_tweets
         self.progress = Progress(0, max_tweets)
@@ -37,6 +57,19 @@ class Twitter_Scraper:
         self.driver = self._get_driver()
         self.scroller = Scroller(self.driver)
         self._login()
+
+        if scrape_username is not None:
+            self.scraper_details["type"] = "Username"
+            self.router = self.go_to_profile
+        elif scrape_hashtag is not None:
+            self.scraper_details["type"] = "Hashtag"
+            self.router = self.go_to_hashtag
+        elif scrape_query is not None:
+            self.scraper_details["type"] = "Query"
+            self.router = self.go_to_search
+        else:
+            self.scraper_details["type"] = "Home"
+            self.router = self.go_to_home
 
     def _get_driver(self):
         print("Setup WebDriver...")
@@ -177,33 +210,84 @@ It may be due to the following:
         sleep(3)
         pass
 
+    def go_to_profile(self):
+        self.driver.get(f"https://twitter.com/{self.scraper_details['username']}")
+        sleep(3)
+        pass
+
+    def go_to_hashtag(self):
+        url = f"https://twitter.com/hashtag/{self.scraper_details['hashtag']}?src=hashtag_click"
+        if self.scraper_details["tab"] == "Latest":
+            url += "&f=live"
+
+        self.driver.get(url)
+        sleep(3)
+        pass
+
+    def go_to_search(self):
+        url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
+        if self.scraper_details["tab"] == "Latest":
+            url += "&f=live"
+
+        self.driver.get(url)
+        sleep(3)
+        pass
+
     def get_tweets(self):
         self.tweet_cards = self.driver.find_elements(
             "xpath", '//article[@data-testid="tweet"]'
         )
         pass
 
-    def scrape_tweets(self, callback=None):
-        if callback is None:
-            callback = self.go_to_home
+    def scrape_tweets(self, router=None):
+        if router is None:
+            router = self.router
 
-        callback()
+        router()
 
-        print("Scraping Tweets...")
+        if self.scraper_details["type"] == "Username":
+            print(
+                "Scraping Tweets from @{}...".format(self.scraper_details["username"])
+            )
+        elif self.scraper_details["type"] == "Hashtag":
+            print(
+                "Scraping {} Tweets from #{}...".format(
+                    self.scraper_details["tab"], self.scraper_details["hashtag"]
+                )
+            )
+        elif self.scraper_details["type"] == "Query":
+            print(
+                "Scraping {} Tweets from {} search...".format(
+                    self.scraper_details["tab"], self.scraper_details["query"]
+                )
+            )
+        elif self.scraper_details["type"] == "Home":
+            print("Scraping Tweets from Home...")
+
         self.progress.print_progress(0)
+
+        refresh_count = 0
+        added_tweets = 0
 
         while self.scroller.scrolling:
             try:
                 self.get_tweets()
+                added_tweets = 0
 
                 for card in self.tweet_cards[-15:]:
-                    tweet_id = str(card)
+                    tweet = Tweet(card)
+
+                    try:
+                        tweet_id = f"{tweet.user}{tweet.handle}{tweet.date_time}"
+                    except Exception as e:
+                        continue
+
                     if tweet_id not in self.tweet_ids:
                         self.tweet_ids.add(tweet_id)
-                        tweet = Tweet(card)
                         if tweet:
                             if not tweet.is_ad:
                                 self.data.append(tweet.tweet)
+                                added_tweets += 1
                                 self.progress.print_progress(len(self.data))
 
                                 if len(self.data) >= self.max_tweets:
@@ -216,6 +300,15 @@ It may be due to the following:
                 if len(self.data) >= self.max_tweets:
                     break
 
+                if added_tweets == 0:
+                    refresh_count += 1
+                    if refresh_count >= 10:
+                        print()
+                        print("No more tweets to scrape")
+                        break
+                else:
+                    refresh_count = 0
+
                 self.scroller.scroll_count = 0
 
                 while True:
@@ -227,23 +320,23 @@ It may be due to the following:
                         self.scroller.scroll_count += 1
 
                         if self.scroller.scroll_count >= 3:
-                            callback()
+                            router()
                             sleep(2)
-                            self.scroller.reset()
                             break
                         else:
-                            sleep(2)
+                            sleep(1)
                     else:
                         self.scroller.last_position = self.scroller.current_position
                         break
             except StaleElementReferenceException:
-                callback()
+                router()
                 sleep(2)
             except Exception as e:
+                print("\n")
                 print(f"Error scraping tweets: {e}")
                 break
 
-        print("\n")
+        print("")
 
         if len(self.data) >= self.max_tweets:
             print("Scraping Complete")
