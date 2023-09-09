@@ -43,7 +43,7 @@ class Tweet:
         self.content = ""
         contents = card.find_elements(
             "xpath",
-            './/div[@data-testid="tweetText"]/span | .//div[@data-testid="tweetText"]/a',
+            '(.//div[@data-testid="tweetText"])[1]/span | (.//div[@data-testid="tweetText"])[1]/a',
         )
 
         for index, content in enumerate(contents):
