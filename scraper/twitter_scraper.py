@@ -233,7 +233,7 @@ It may be due to the following:
         sleep(3)
         pass
 
-    def get_tweets(self):
+    def get_tweet_cards(self):
         self.tweet_cards = self.driver.find_elements(
             "xpath", '//article[@data-testid="tweet"]'
         )
@@ -271,7 +271,7 @@ It may be due to the following:
 
         while self.scroller.scrolling:
             try:
-                self.get_tweets()
+                self.get_tweet_cards()
                 added_tweets = 0
 
                 for card in self.tweet_cards[-15:]:
@@ -379,3 +379,6 @@ It may be due to the following:
         print("CSV Saved: {}".format(file_path))
 
         pass
+
+    def get_tweets(self):
+        return self.data
