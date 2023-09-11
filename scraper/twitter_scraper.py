@@ -114,16 +114,43 @@ class Twitter_Scraper:
 
     def _login(self):
         print("Logging in to Twitter...")
-        self.driver.get(TWITTER_LOGIN_URL)
-        self.driver.maximize_window()
-        sleep(3)
 
-        self._input_username()
-        self._input_unusual_activity()
-        self._input_password()
+        try:
+            self.driver.get(TWITTER_LOGIN_URL)
+            self.driver.maximize_window()
+            sleep(3)
 
-        print("Login Successful")
-        print()
+            self._input_username()
+            self._input_unusual_activity()
+            self._input_password()
+
+            cookies = self.driver.get_cookies()
+
+            auth_token = None
+
+            for cookie in cookies:
+                if cookie["name"] == "auth_token":
+                    auth_token = cookie["value"]
+                    break
+
+            if auth_token is None:
+                raise ValueError(
+                    """This may be due to the following:
+
+- Internet connection is unstable
+- Username is incorrect
+- Password is incorrect
+"""
+                )
+
+            print()
+            print("Login Successful")
+            print()
+        except Exception as e:
+            print()
+            print(f"Login Failed: {e}")
+            sys.exit(1)
+
         pass
 
     def _input_username(self):
