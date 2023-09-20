@@ -39,7 +39,45 @@ class Twitter_Scraper:
         print("Initializing Twitter Scraper...")
         self.username = username
         self.password = password
+        self.tweet_ids = set()
         self.data = []
+        self.tweet_cards = []
+        self.scraper_details = {
+            "type": None,
+            "username": None,
+            "hashtag": None,
+            "query": None,
+            "tab": None,
+        }
+        self.max_tweets = max_tweets
+        self.progress = Progress(0, max_tweets)
+        self.router = self.go_to_home
+        self.driver = self._get_driver()
+        self.scroller = Scroller(self.driver)
+        self._login()
+        self._config_scraper(
+            max_tweets,
+            scrape_username,
+            scrape_hashtag,
+            scrape_query,
+            scrape_latest,
+            scrape_top,
+        )
+
+    def _config_scraper(
+        self,
+        max_tweets=50,
+        scrape_username=None,
+        scrape_hashtag=None,
+        scrape_query=None,
+        scrape_latest=True,
+        scrape_top=False,
+    ):
+        self.tweet_ids = set()
+        self.data = []
+        self.tweet_cards = []
+        self.max_tweets = max_tweets
+        self.progress = Progress(0, max_tweets)
         self.scraper_details = {
             "type": None,
             "username": scrape_username,
@@ -50,13 +88,6 @@ class Twitter_Scraper:
             "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
         }
         self.router = self.go_to_home
-        self.tweet_ids = set()
-        self.max_tweets = max_tweets
-        self.progress = Progress(0, max_tweets)
-        self.tweet_cards = []
-        self.driver = self._get_driver()
-        self.scroller = Scroller(self.driver)
-        self._login()
 
         if scrape_username is not None:
             self.scraper_details["type"] = "Username"
@@ -70,6 +101,7 @@ class Twitter_Scraper:
         else:
             self.scraper_details["type"] = "Home"
             self.router = self.go_to_home
+        pass
 
     def _get_driver(self):
         print("Setup WebDriver...")
@@ -238,26 +270,44 @@ It may be due to the following:
         pass
 
     def go_to_profile(self):
-        self.driver.get(f"https://twitter.com/{self.scraper_details['username']}")
-        sleep(3)
+        if (
+            self.scraper_details["username"] is None
+            or self.scraper_details["username"] == ""
+        ):
+            print("Username is not set.")
+            sys.exit(1)
+        else:
+            self.driver.get(f"https://twitter.com/{self.scraper_details['username']}")
+            sleep(3)
         pass
 
     def go_to_hashtag(self):
-        url = f"https://twitter.com/hashtag/{self.scraper_details['hashtag']}?src=hashtag_click"
-        if self.scraper_details["tab"] == "Latest":
-            url += "&f=live"
+        if (
+            self.scraper_details["hashtag"] is None
+            or self.scraper_details["hashtag"] == ""
+        ):
+            print("Hashtag is not set.")
+            sys.exit(1)
+        else:
+            url = f"https://twitter.com/hashtag/{self.scraper_details['hashtag']}?src=hashtag_click"
+            if self.scraper_details["tab"] == "Latest":
+                url += "&f=live"
 
-        self.driver.get(url)
-        sleep(3)
+            self.driver.get(url)
+            sleep(3)
         pass
 
     def go_to_search(self):
-        url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
-        if self.scraper_details["tab"] == "Latest":
-            url += "&f=live"
+        if self.scraper_details["query"] is None or self.scraper_details["query"] == "":
+            print("Query is not set.")
+            sys.exit(1)
+        else:
+            url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
+            if self.scraper_details["tab"] == "Latest":
+                url += "&f=live"
 
-        self.driver.get(url)
-        sleep(3)
+            self.driver.get(url)
+            sleep(3)
         pass
 
     def get_tweet_cards(self):
@@ -266,7 +316,25 @@ It may be due to the following:
         )
         pass
 
-    def scrape_tweets(self, router=None):
+    def scrape_tweets(
+        self,
+        max_tweets=50,
+        scrape_username=None,
+        scrape_hashtag=None,
+        scrape_query=None,
+        scrape_latest=True,
+        scrape_top=False,
+        router=None,
+    ):
+        self._config_scraper(
+            max_tweets,
+            scrape_username,
+            scrape_hashtag,
+            scrape_query,
+            scrape_latest,
+            scrape_top,
+        )
+
         if router is None:
             router = self.router
 

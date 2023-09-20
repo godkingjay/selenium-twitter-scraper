@@ -115,7 +115,14 @@ def main():
                 scrape_top=args.top,
             )
 
-            scraper.scrape_tweets()
+            scraper.scrape_tweets(
+                max_tweets=args.tweets,
+                scrape_username=args.username,
+                scrape_hashtag=args.hashtag,
+                scrape_query=args.query,
+                scrape_latest=args.latest,
+                scrape_top=args.top,
+            )
             scraper.save_to_csv()
             scraper.driver.close()
         else:
