@@ -17,28 +17,29 @@ except Exception as e:
 
 def main():
     try:
-        try:
-            USER_UNAME = os.getenv("TWITTER_USERNAME")
-            USER_PASSWORD = os.getenv("TWITTER_PASSWORD")
-        except Exception as e:
-            print(f"Error retrieving environment variables: {e}")
-            USER_UNAME = None
-            USER_PASSWORD = None
-            sys.exit(1)
-
-        if USER_UNAME is None:
-            USER_UNAME = input("Twitter Username: ")
-
-        if USER_PASSWORD is None:
-            USER_PASSWORD = getpass.getpass("Enter Password: ")
-
-        print()
-
         parser = argparse.ArgumentParser(
             add_help=True,
             usage="python scraper [option] ... [arg] ...",
             description="Twitter Scraper is a tool that allows you to scrape tweets from twitter without using Twitter's API.",
         )
+
+        try:
+            parser.add_argument(
+                "--user",
+                type=str,
+                default=os.getenv("TWITTER_USERNAME"),
+                help="Your Twitter username.",
+            )
+
+            parser.add_argument(
+                "--password",
+                type=str,
+                default=os.getenv("TWITTER_PASSWORD"),
+                help="Your Twitter password.",
+            )
+        except Exception as e:
+            print(f"Error retrieving environment variables: {e}")
+            sys.exit(1)
 
         parser.add_argument(
             "-t",
@@ -85,6 +86,17 @@ def main():
         )
 
         args = parser.parse_args()
+
+        USER_UNAME = args.user
+        USER_PASSWORD = args.password
+
+        if USER_UNAME is None:
+            USER_UNAME = input("Twitter Username: ")
+
+        if USER_PASSWORD is None:
+            USER_PASSWORD = getpass.getpass("Enter Password: ")
+
+        print()
 
         tweet_type_args = []
 
