@@ -53,6 +53,9 @@ class Tweet:
             self.reply_cnt = card.find_element(
                 "xpath", './/div[@data-testid="reply"]//span'
             ).text
+
+            if self.reply_cnt == "":
+                self.reply_cnt = "0"
         except NoSuchElementException:
             self.reply_cnt = "0"
 
@@ -60,6 +63,9 @@ class Tweet:
             self.retweet_cnt = card.find_element(
                 "xpath", './/div[@data-testid="retweet"]//span'
             ).text
+
+            if self.retweet_cnt == "":
+                self.retweet_cnt = "0"
         except NoSuchElementException:
             self.retweet_cnt = "0"
 
@@ -67,6 +73,9 @@ class Tweet:
             self.like_cnt = card.find_element(
                 "xpath", './/div[@data-testid="like"]//span'
             ).text
+
+            if self.like_cnt == "":
+                self.like_cnt = "0"
         except NoSuchElementException:
             self.like_cnt = "0"
 
@@ -74,6 +83,9 @@ class Tweet:
             self.analytics_cnt = card.find_element(
                 "xpath", './/a[contains(@href, "/analytics")]//span'
             ).text
+
+            if self.analytics_cnt == "":
+                self.analytics_cnt = "0"
         except NoSuchElementException:
             self.analytics_cnt = "0"
 
