@@ -8,13 +8,47 @@
 pip install -r requirements.txt
 ```
 
-2. Rename `.env.example` to `.env`.
-3. Open .env and update environment variables
+## Authentication Options
+
+### Using Environment Variable
+
+1. Rename `.env.example` to `.env`.
+
+2. Open `.env` and update environment variables
 
 ```bash
 TWITTER_USERNAME=# Your Twitter Handle (e.g. @username)
 TWITTER_PASSWORD=# Your Twitter Password
 ```
+
+### Authentication in Terminal
+
+- Add a `username` and `password` to the command line.
+
+```bash
+python scraper --user=@elonmusk --password=password123
+```
+
+### No Authentication Provided
+
+- If you didn't specify a username and password, the program will
+  ask you to enter a username and password.
+
+```bash
+Twitter Username: @username
+Password: password123
+```
+
+---
+
+**_Authentication Sequence Priority_**
+
+```bash
+1. Authentication provided in terminal.
+2. Authentication provided in environment variables.
+```
+
+---
 
 ## Usage
 
@@ -40,6 +74,11 @@ python scraper --tweets=500   # Scrape 500 Tweets
 
 ```bash
 usage: python scraper [option] ... [arg] ...
+
+authentication options  description
+--user                  : Your twitter account Handle (e.g. @username)
+
+--password              : Your twitter account password (e.g. password123)
 
 options:                description
 -t, --tweets            : Number of tweets to scrape (default: 50).
@@ -107,7 +146,7 @@ python scraper -t 100 -u elonmusk
     ```
 
 - **Query or Search Scraping**
-  _(Also works with twitter advanced search.)_
+  _(Also works with twitter's advanced search.)_
 
   - Latest
 
@@ -120,3 +159,21 @@ python scraper -t 100 -u elonmusk
     ```bash
     python scraper -t 100 -q "International News" --top
     ```
+
+- **Advanced Search Scraping**
+
+  - For tweets mentioning `@elonmusk`:
+
+    ```bash
+    python scraper --query="(@elonmusk)"
+    ```
+
+  - For tweets that mentions `@elonmusk` with at least `1000` replies from `January 01, 2020 - August 31, 2023`:
+
+    ```bash
+    python scraper --query="(@elonmusk) min_replies:1000 until:2023-08-31 since:2020-01-01"
+    ```
+
+  - Perform more `Advanced Search` using Twitter's Advanced Search, just setup the advanced query and copy the resulting string query to the program:
+  - **[Twitter Advanced Search](https://twitter.com/search-advanced)**
+    [![Image](./img/advanced-search-01.png)](./img/advanced-search-01.png)
