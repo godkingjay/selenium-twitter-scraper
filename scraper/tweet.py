@@ -78,13 +78,6 @@ class Tweet:
             self.analytics_cnt = "0"
 
         try:
-            self.profile_img = card.find_element(
-                "xpath", './/div[@data-testid="Tweet-User-Avatar"]//img'
-            ).get_attribute("src")
-        except NoSuchElementException:
-            self.profile_img = ""
-
-        try:
             self.tags = card.find_elements(
                 "xpath",
                 './/a[contains(@href, "src=hashtag_click")]',
@@ -93,6 +86,36 @@ class Tweet:
             self.tags = [tag.text for tag in self.tags]
         except NoSuchElementException:
             self.tags = []
+
+        try:
+            self.mentions = card.find_elements(
+                "xpath",
+                '(.//div[@data-testid="tweetText"])[1]//a[contains(text(), "@")]',
+            )
+
+            self.mentions = [mention.text for mention in self.mentions]
+        except NoSuchElementException:
+            self.mentions = []
+
+        try:
+            raw_emojis = card.find_elements(
+                "xpath",
+                '(.//div[@data-testid="tweetText"])[1]/img[contains(@src, "emoji")]',
+            )
+
+            self.emojis = [
+                emoji.get_attribute("alt").encode("unicode-escape").decode("ASCII")
+                for emoji in raw_emojis
+            ]
+        except NoSuchElementException:
+            self.emojis = []
+
+        try:
+            self.profile_img = card.find_element(
+                "xpath", './/div[@data-testid="Tweet-User-Avatar"]//img'
+            ).get_attribute("src")
+        except NoSuchElementException:
+            self.profile_img = ""
 
         self.tweet = (
             self.user,
@@ -105,6 +128,8 @@ class Tweet:
             self.like_cnt,
             self.analytics_cnt,
             self.tags,
+            self.mentions,
+            self.emojis,
             self.profile_img,
         )
 

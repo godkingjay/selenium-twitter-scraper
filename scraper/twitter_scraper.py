@@ -88,6 +88,7 @@ class Twitter_Scraper:
             "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
         }
         self.router = self.go_to_home
+        self.scroller = Scroller(self.driver)
 
         if scrape_username is not None:
             self.scraper_details["type"] = "Username"
@@ -462,14 +463,16 @@ It may be due to the following:
             "Likes": [tweet[7] for tweet in self.data],
             "Analytics": [tweet[8] for tweet in self.data],
             "Tags": [tweet[9] for tweet in self.data],
-            "Profile Image": [tweet[10] for tweet in self.data],
+            "Mentions": [tweet[10] for tweet in self.data],
+            "Emojis": [tweet[11] for tweet in self.data],
+            "Profile Image": [tweet[12] for tweet in self.data],
         }
 
         df = pd.DataFrame(data)
 
         current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
         file_path = f"{folder_path}{current_time}_tweets_1-{len(self.data)}.csv"
-        df.to_csv(file_path, index=False)
+        df.to_csv(file_path, index=False, encoding="utf-8")
 
         print("CSV Saved: {}".format(file_path))
 
