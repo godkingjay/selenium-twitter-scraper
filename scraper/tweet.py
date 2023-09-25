@@ -1,24 +1,39 @@
-from selenium.webdriver import Chrome
-from selenium.common.exceptions import NoSuchElementException
+from time import sleep
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+)
+from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 class Tweet:
-    def __init__(self, card: Chrome) -> None:
+    def __init__(
+        self,
+        card: WebDriver,
+        driver: WebDriver,
+        actions: ActionChains,
+        scrape_poster_details=False,
+    ) -> None:
         self.card = card
+        self.error = False
+        self.tweet = None
 
         try:
             self.user = card.find_element(
                 "xpath", './/div[@data-testid="User-Name"]//span'
             ).text
         except NoSuchElementException:
-            return
+            self.error = True
+            self.user = "skip"
 
         try:
             self.handle = card.find_element(
                 "xpath", './/span[contains(text(), "@")]'
             ).text
         except NoSuchElementException:
-            return
+            self.error = True
+            self.handle = "skip"
 
         try:
             self.date_time = card.find_element("xpath", ".//time").get_attribute(
@@ -29,6 +44,10 @@ class Tweet:
                 self.is_ad = False
         except NoSuchElementException:
             self.is_ad = True
+            self.error = True
+            self.date_time = "skip"
+
+        if self.error:
             return
 
         try:
@@ -129,6 +148,75 @@ class Tweet:
         except NoSuchElementException:
             self.profile_img = ""
 
+        self.following_cnt = "0"
+        self.followers_cnt = "0"
+
+        if scrape_poster_details:
+            el_name = card.find_element(
+                "xpath", './/div[@data-testid="User-Name"]//span'
+            )
+
+            ext_hover_card = False
+            ext_following = False
+            ext_followers = False
+            hover_attempt = 0
+
+            while not ext_hover_card or not ext_following or not ext_followers:
+                try:
+                    actions.move_to_element(el_name).perform()
+
+                    hover_card = driver.find_element(
+                        "xpath", '//div[@data-testid="hoverCardParent"]'
+                    )
+
+                    ext_hover_card = True
+
+                    while not ext_following:
+                        try:
+                            self.following_cnt = hover_card.find_element(
+                                "xpath", './/a[contains(@href, "/following")]//span'
+                            ).text
+
+                            if self.following_cnt == "":
+                                self.following_cnt = "0"
+
+                            ext_following = True
+                        except NoSuchElementException:
+                            continue
+                        except StaleElementReferenceException:
+                            self.error = True
+                            return
+
+                    while not ext_followers:
+                        try:
+                            self.followers_cnt = hover_card.find_element(
+                                "xpath",
+                                './/a[contains(@href, "/verified_followers")]//span',
+                            ).text
+
+                            if self.followers_cnt == "":
+                                self.followers_cnt = "0"
+
+                            ext_followers = True
+                        except NoSuchElementException:
+                            continue
+                        except StaleElementReferenceException:
+                            self.error = True
+                            return
+                except NoSuchElementException:
+                    if hover_attempt == 3:
+                        self.error
+                        return
+                    hover_attempt += 1
+                    sleep(0.5)
+                    continue
+                except StaleElementReferenceException:
+                    self.error = True
+                    return
+
+            if ext_hover_card and ext_following and ext_followers:
+                actions.reset_actions()
+
         self.tweet = (
             self.user,
             self.handle,
@@ -143,6 +231,8 @@ class Tweet:
             self.mentions,
             self.emojis,
             self.profile_img,
+            self.following_cnt,
+            self.followers_cnt,
         )
 
         pass

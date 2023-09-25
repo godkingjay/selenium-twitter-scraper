@@ -74,6 +74,14 @@ def main():
         )
 
         parser.add_argument(
+            "-a",
+            "--add",
+            type=str,
+            default="",
+            help="Additional data to scrape and save in the .csv file.",
+        )
+
+        parser.add_argument(
             "--latest",
             action="store_true",
             help="Scrape latest tweets",
@@ -107,6 +115,8 @@ def main():
         if args.query is not None:
             tweet_type_args.append(args.query)
 
+        additional_data: list = args.add.split(",")
+
         if len(tweet_type_args) > 1:
             print("Please specify only one of --username, --hashtag, or --query.")
             sys.exit(1)
@@ -119,14 +129,8 @@ def main():
             scraper = Twitter_Scraper(
                 username=USER_UNAME,
                 password=USER_PASSWORD,
-                max_tweets=args.tweets,
-                scrape_username=args.username,
-                scrape_hashtag=args.hashtag,
-                scrape_query=args.query,
-                scrape_latest=args.latest,
-                scrape_top=args.top,
             )
-
+            scraper.login()
             scraper.scrape_tweets(
                 max_tweets=args.tweets,
                 scrape_username=args.username,
@@ -134,9 +138,11 @@ def main():
                 scrape_query=args.query,
                 scrape_latest=args.latest,
                 scrape_top=args.top,
+                scrape_poster_details="pd" in additional_data,
             )
             scraper.save_to_csv()
-            scraper.driver.close()
+            if not scraper.interrupted:
+                scraper.driver.close()
         else:
             print(
                 "Missing Twitter username or password environment variables. Please check your .env file."
@@ -145,6 +151,10 @@ def main():
     except KeyboardInterrupt:
         print("\nScript Interrupted by user. Exiting...")
         sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

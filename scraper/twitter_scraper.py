@@ -8,6 +8,7 @@ from tweet import Tweet
 from datetime import datetime
 from fake_headers import Headers
 from time import sleep
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import (
@@ -15,7 +16,7 @@ from selenium.common.exceptions import (
     StaleElementReferenceException,
     WebDriverException,
 )
-
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 
@@ -33,12 +34,14 @@ class Twitter_Scraper:
         scrape_username=None,
         scrape_hashtag=None,
         scrape_query=None,
+        scrape_poster_details=False,
         scrape_latest=True,
         scrape_top=False,
     ):
         print("Initializing Twitter Scraper...")
         self.username = username
         self.password = password
+        self.interrupted = False
         self.tweet_ids = set()
         self.data = []
         self.tweet_cards = []
@@ -48,13 +51,14 @@ class Twitter_Scraper:
             "hashtag": None,
             "query": None,
             "tab": None,
+            "poster_details": False,
         }
         self.max_tweets = max_tweets
         self.progress = Progress(0, max_tweets)
         self.router = self.go_to_home
         self.driver = self._get_driver()
+        self.actions = ActionChains(self.driver)
         self.scroller = Scroller(self.driver)
-        self._login()
         self._config_scraper(
             max_tweets,
             scrape_username,
@@ -62,6 +66,7 @@ class Twitter_Scraper:
             scrape_query,
             scrape_latest,
             scrape_top,
+            scrape_poster_details,
         )
 
     def _config_scraper(
@@ -72,6 +77,7 @@ class Twitter_Scraper:
         scrape_query=None,
         scrape_latest=True,
         scrape_top=False,
+        scrape_poster_details=False,
     ):
         self.tweet_ids = set()
         self.data = []
@@ -86,6 +92,7 @@ class Twitter_Scraper:
             else None,
             "query": scrape_query,
             "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
+            "poster_details": scrape_poster_details,
         }
         self.router = self.go_to_home
         self.scroller = Scroller(self.driver)
@@ -127,6 +134,7 @@ class Twitter_Scraper:
                 options=browser_option,
             )
 
+            print("WebDriver Setup Complete")
             return driver
         except WebDriverException:
             try:
@@ -140,17 +148,20 @@ class Twitter_Scraper:
                     options=browser_option,
                 )
 
+                print("WebDriver Setup Complete")
                 return driver
             except Exception as e:
                 print(f"Error setting up WebDriver: {e}")
                 sys.exit(1)
+        pass
 
-    def _login(self):
+    def login(self):
+        print()
         print("Logging in to Twitter...")
 
         try:
-            self.driver.get(TWITTER_LOGIN_URL)
             self.driver.maximize_window()
+            self.driver.get(TWITTER_LOGIN_URL)
             sleep(3)
 
             self._input_username()
@@ -313,8 +324,22 @@ It may be due to the following:
 
     def get_tweet_cards(self):
         self.tweet_cards = self.driver.find_elements(
-            "xpath", '//article[@data-testid="tweet"]'
+            "xpath", '//article[@data-testid="tweet" and not(@disabled)]'
         )
+        pass
+
+    def remove_hidden_cards(self):
+        try:
+            hidden_cards = self.driver.find_elements(
+                "xpath", '//article[@data-testid="tweet" and @disabled]'
+            )
+
+            for card in hidden_cards[1:-2]:
+                self.driver.execute_script(
+                    "arguments[0].parentNode.parentNode.parentNode.remove();", card
+                )
+        except Exception as e:
+            return
         pass
 
     def scrape_tweets(
@@ -325,6 +350,7 @@ It may be due to the following:
         scrape_query=None,
         scrape_latest=True,
         scrape_top=False,
+        scrape_poster_details=False,
         router=None,
     ):
         self._config_scraper(
@@ -334,6 +360,7 @@ It may be due to the following:
             scrape_query,
             scrape_latest,
             scrape_top,
+            scrape_poster_details,
         )
 
         if router is None:
@@ -364,6 +391,7 @@ It may be due to the following:
 
         refresh_count = 0
         added_tweets = 0
+        empty_count = 0
 
         while self.scroller.scrolling:
             try:
@@ -371,62 +399,70 @@ It may be due to the following:
                 added_tweets = 0
 
                 for card in self.tweet_cards[-15:]:
-                    tweet = Tweet(card)
-
                     try:
-                        tweet_id = f"{tweet.user}{tweet.handle}{tweet.date_time}"
-                    except Exception as e:
+                        tweet_id = str(card)
+
+                        if tweet_id not in self.tweet_ids:
+                            self.tweet_ids.add(tweet_id)
+
+                            if not self.scraper_details["poster_details"]:
+                                self.driver.execute_script(
+                                    "arguments[0].scrollIntoView();", card
+                                )
+
+                            tweet = Tweet(
+                                card=card,
+                                driver=self.driver,
+                                actions=self.actions,
+                                scrape_poster_details=self.scraper_details[
+                                    "poster_details"
+                                ],
+                            )
+
+                            if tweet:
+                                if not tweet.error and tweet.tweet is not None:
+                                    if not tweet.is_ad:
+                                        self.data.append(tweet.tweet)
+                                        added_tweets += 1
+                                        self.progress.print_progress(len(self.data))
+
+                                        if len(self.data) >= self.max_tweets:
+                                            self.scroller.scrolling = False
+                                            break
+                                    else:
+                                        continue
+                                else:
+                                    continue
+                            else:
+                                continue
+                        else:
+                            continue
+                    except NoSuchElementException:
                         continue
-
-                    if tweet_id not in self.tweet_ids:
-                        self.tweet_ids.add(tweet_id)
-                        if tweet:
-                            if not tweet.is_ad:
-                                self.data.append(tweet.tweet)
-                                added_tweets += 1
-                                self.progress.print_progress(len(self.data))
-
-                                if len(self.data) >= self.max_tweets:
-                                    self.scroller.scrolling = False
-                                    break
-
-                                if len(self.data) % 50 == 0:
-                                    sleep(2)
 
                 if len(self.data) >= self.max_tweets:
                     break
 
                 if added_tweets == 0:
-                    refresh_count += 1
-                    if refresh_count >= 10:
-                        print()
-                        print("No more tweets to scrape")
-                        break
-                else:
-                    refresh_count = 0
-
-                self.scroller.scroll_count = 0
-
-                while True:
-                    self.scroller.scroll_to_bottom()
-                    sleep(2)
-                    self.scroller.update_scroll_position()
-
-                    if self.scroller.last_position == self.scroller.current_position:
-                        self.scroller.scroll_count += 1
-
-                        if self.scroller.scroll_count >= 3:
-                            router()
-                            sleep(2)
+                    if empty_count >= 5:
+                        if refresh_count >= 3:
+                            print()
+                            print("No more tweets to scrape")
                             break
-                        else:
-                            sleep(1)
-                    else:
-                        self.scroller.last_position = self.scroller.current_position
-                        break
+                        refresh_count += 1
+                    empty_count += 1
+                    sleep(1)
+                else:
+                    empty_count = 0
+                    refresh_count = 0
             except StaleElementReferenceException:
-                router()
                 sleep(2)
+                continue
+            except KeyboardInterrupt:
+                print("\n")
+                print("Keyboard Interrupt")
+                self.interrupted = True
+                break
             except Exception as e:
                 print("\n")
                 print(f"Error scraping tweets: {e}")
@@ -467,6 +503,10 @@ It may be due to the following:
             "Emojis": [tweet[11] for tweet in self.data],
             "Profile Image": [tweet[12] for tweet in self.data],
         }
+
+        if self.scraper_details["poster_details"]:
+            data["Following"] = [tweet[13] for tweet in self.data]
+            data["Followers"] = [tweet[14] for tweet in self.data]
 
         df = pd.DataFrame(data)
 
