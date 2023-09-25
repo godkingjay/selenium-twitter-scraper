@@ -76,9 +76,13 @@ python scraper --tweets=500   # Scrape 500 Tweets
 usage: python scraper [option] ... [arg] ...
 
 authentication options  description
---user                  : Your twitter account Handle (e.g. @username)
+--user                  : Your twitter account Handle.
+                          e.g.
+                          --user=@username
 
---password              : Your twitter account password (e.g. password123)
+--password              : Your twitter account password.
+                          e.g.
+                          --password=password123
 
 options:                description
 -t, --tweets            : Number of tweets to scrape (default: 50).
@@ -103,6 +107,18 @@ options:                description
                           e.g.
                             -q "Philippine Marites"
                             --query="Jak Roberto anti selos"
+
+-a, --add               : Additional data to scrape and
+                          save in the .csv file.
+
+                          values:
+                          pd - poster's followers and following
+
+                          e.g.
+                            -a "pd"
+                            --add="pd"
+
+                          NOTE: Values must be separated by commas.
 
 --latest                : Twitter latest tweets (default: True).
                           Note: Only for hashtag-based
@@ -177,3 +193,15 @@ python scraper -t 100 -u elonmusk
   - Perform more `Advanced Search` using Twitter's Advanced Search, just setup the advanced query and copy the resulting string query to the program:
   - **[Twitter Advanced Search](https://twitter.com/search-advanced)**
     [![Image](./img/advanced-search-01.png)](./img/advanced-search-01.png)
+
+- **Scrape Additional Data**
+
+```bash
+python scraper --add="pd"
+```
+
+| Values | Description                                   |
+| :----: | :-------------------------------------------- |
+|   pd   | Tweet poster's followers and following count. |
+
+---
