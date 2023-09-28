@@ -200,8 +200,8 @@ python scraper -t 100 -u elonmusk
 python scraper --add="pd"
 ```
 
-| Values | Description                                   |
-| :----: | :-------------------------------------------- |
-|   pd   | Tweet poster's followers and following count. |
+| Values | Description                                        |
+| :----: | :------------------------------------------------- |
+|   pd   | Tweet poster's id, followers, and following count. |
 
 ---
