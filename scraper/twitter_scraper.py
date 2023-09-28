@@ -502,16 +502,20 @@ It may be due to the following:
             "Mentions": [tweet[10] for tweet in self.data],
             "Emojis": [tweet[11] for tweet in self.data],
             "Profile Image": [tweet[12] for tweet in self.data],
+            "Tweet Link": [tweet[13] for tweet in self.data],
+            "Tweet ID": [f"tweet_id:{tweet[14]}" for tweet in self.data],
         }
 
         if self.scraper_details["poster_details"]:
-            data["Following"] = [tweet[13] for tweet in self.data]
-            data["Followers"] = [tweet[14] for tweet in self.data]
+            data["Tweeter ID"] = [f"user_id:{tweet[15]}" for tweet in self.data]
+            data["Following"] = [tweet[16] for tweet in self.data]
+            data["Followers"] = [tweet[17] for tweet in self.data]
 
         df = pd.DataFrame(data)
 
         current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
         file_path = f"{folder_path}{current_time}_tweets_1-{len(self.data)}.csv"
+        pd.set_option("display.max_colwidth", None)
         df.to_csv(file_path, index=False, encoding="utf-8")
 
         print("CSV Saved: {}".format(file_path))

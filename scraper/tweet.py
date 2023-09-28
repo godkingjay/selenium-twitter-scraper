@@ -148,8 +148,19 @@ class Tweet:
         except NoSuchElementException:
             self.profile_img = ""
 
+        try:
+            self.tweet_link = self.card.find_element(
+                "xpath",
+                ".//a[contains(@href, '/status/')]",
+            ).get_attribute("href")
+            self.tweet_id = str(self.tweet_link.split("/")[-1])
+        except NoSuchElementException:
+            self.tweet_link = ""
+            self.tweet_id = ""
+
         self.following_cnt = "0"
         self.followers_cnt = "0"
+        self.user_id = None
 
         if scrape_poster_details:
             el_name = card.find_element(
@@ -157,11 +168,17 @@ class Tweet:
             )
 
             ext_hover_card = False
+            ext_user_id = False
             ext_following = False
             ext_followers = False
             hover_attempt = 0
 
-            while not ext_hover_card or not ext_following or not ext_followers:
+            while (
+                not ext_hover_card
+                or not ext_user_id
+                or not ext_following
+                or not ext_followers
+            ):
                 try:
                     actions.move_to_element(el_name).perform()
 
@@ -170,6 +187,25 @@ class Tweet:
                     )
 
                     ext_hover_card = True
+
+                    while not ext_user_id:
+                        try:
+                            raw_user_id = hover_card.find_element(
+                                "xpath",
+                                '(.//div[contains(@data-testid, "-follow")]) | (.//div[contains(@data-testid, "-unfollow")])',
+                            ).get_attribute("data-testid")
+
+                            if raw_user_id == "":
+                                self.user_id = None
+                            else:
+                                self.user_id = str(raw_user_id.split("-")[0])
+
+                            ext_user_id = True
+                        except NoSuchElementException:
+                            continue
+                        except StaleElementReferenceException:
+                            self.error = True
+                            return
 
                     while not ext_following:
                         try:
@@ -231,6 +267,9 @@ class Tweet:
             self.mentions,
             self.emojis,
             self.profile_img,
+            self.tweet_link,
+            self.tweet_id,
+            self.user_id,
             self.following_cnt,
             self.followers_cnt,
         )
