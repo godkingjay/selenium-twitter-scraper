@@ -22,9 +22,9 @@ Pull requests are the best way to propose changes to the codebase (we use [Githu
 4. Make sure your code lints.
 5. Issue that pull request!
 
-## Any contributions you make will be under the MIT Software License
+## Any contributions you make will be under the Apache License Version 2.0 Software License
 
-In short, when you submit code changes, your submissions are understood to be under the same [GNU General Public License v3.0 License](https://choosealicense.com/licenses/gpl-3.0/) that covers the project. Feel free to contact the maintainers if that's a concern.
+In short, when you submit code changes, your submissions are understood to be under the same [Apache License Version 2.0 License](https://choosealicense.com/licenses/apache-2.0/) that covers the project. Feel free to contact the maintainers if that's a concern.
 
 ## Report bugs using Github's [issues](https://github.com/godkingjay/selenium-twitter-scraper/issues)
 
@@ -32,4 +32,4 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under its GNU General Public License v3.0.
+By contributing, you agree that your contributions will be licensed under its Apache License Version 2.0.
