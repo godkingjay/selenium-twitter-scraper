@@ -339,7 +339,6 @@ It may be due to the following:
             sys.exit(1)
         else:
             url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
-            print(url)
             if self.scraper_details["tab"] == "Latest":
                 url += "&f=live"
 
