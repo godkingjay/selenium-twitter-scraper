@@ -18,6 +18,7 @@ pip install -r requirements.txt
 
 ```bash
 TWITTER_USERNAME=# Your Twitter Handle (e.g. @username)
+TWITTER_USERNAME=# Your Twitter Username
 TWITTER_PASSWORD=# Your Twitter Password
 ```
 
@@ -131,6 +132,9 @@ options:                description
                           and query-based scraping.
                           usage:
                             python scraper -t 500 -ht=python --top
+
+-ntl, --no_tweets_limit : Set no limit to the number of tweets to scrape
+                          (will scrap until no more tweets are available).
 ```
 
 ### Sample Scraping Commands

@@ -20,7 +20,13 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
 
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
+
+from selenium.webdriver.support.ui import WebDriverWait
+
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
 
 TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 
@@ -28,6 +34,7 @@ TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 class Twitter_Scraper:
     def __init__(
         self,
+        mail,
         username,
         password,
         max_tweets=50,
@@ -39,6 +46,7 @@ class Twitter_Scraper:
         scrape_top=False,
     ):
         print("Initializing Twitter Scraper...")
+        self.mail = mail
         self.username = username
         self.password = password
         self.interrupted = False
@@ -115,7 +123,8 @@ class Twitter_Scraper:
         print("Setup WebDriver...")
         header = Headers().generate()["User-Agent"]
 
-        browser_option = ChromeOptions()
+        # browser_option = ChromeOptions()
+        browser_option = FirefoxOptions()
         browser_option.add_argument("--no-sandbox")
         browser_option.add_argument("--disable-dev-shm-usage")
         browser_option.add_argument("--ignore-certificate-errors")
@@ -129,8 +138,13 @@ class Twitter_Scraper:
         browser_option.add_argument("--headless")
 
         try:
-            print("Initializing ChromeDriver...")
-            driver = webdriver.Chrome(
+            # print("Initializing ChromeDriver...")
+            # driver = webdriver.Chrome(
+            #     options=browser_option,
+            # )
+
+            print("Initializing FirefoxDriver...")
+            driver = webdriver.Firefox(
                 options=browser_option,
             )
 
@@ -138,13 +152,23 @@ class Twitter_Scraper:
             return driver
         except WebDriverException:
             try:
-                print("Downloading ChromeDriver...")
-                chromedriver_path = ChromeDriverManager().install()
-                chrome_service = ChromeService(executable_path=chromedriver_path)
+                # print("Downloading ChromeDriver...")
+                # chromedriver_path = ChromeDriverManager().install()
+                # chrome_service = ChromeService(executable_path=chromedriver_path)
 
-                print("Initializing ChromeDriver...")
-                driver = webdriver.Chrome(
-                    service=chrome_service,
+                print("Downloading FirefoxDriver...")
+                firefoxdriver_path = GeckoDriverManager().install()
+                firefox_service = FirefoxService(executable_path=firefoxdriver_path)
+
+                # print("Initializing ChromeDriver...")
+                # driver = webdriver.Chrome(
+                #     service=chrome_service,
+                #     options=browser_option,
+                # )
+
+                print("Initializing FirefoxDriver...")
+                driver = webdriver.Firefox(
+                    service=firefox_service,
                     options=browser_option,
                 )
 
@@ -206,7 +230,7 @@ class Twitter_Scraper:
                     "xpath", "//input[@autocomplete='username']"
                 )
 
-                username.send_keys(self.username)
+                username.send_keys(self.mail)
                 username.send_keys(Keys.RETURN)
                 sleep(3)
                 break
@@ -315,10 +339,12 @@ It may be due to the following:
             sys.exit(1)
         else:
             url = f"https://twitter.com/search?q={self.scraper_details['query']}&src=typed_query"
+            print(url)
             if self.scraper_details["tab"] == "Latest":
                 url += "&f=live"
 
             self.driver.get(url)
+            self.driver.save_screenshot('screenshot5.png')
             sleep(3)
         pass
 
@@ -345,6 +371,7 @@ It may be due to the following:
     def scrape_tweets(
         self,
         max_tweets=50,
+        no_tweets_limit=False,
         scrape_username=None,
         scrape_hashtag=None,
         scrape_query=None,
@@ -387,11 +414,20 @@ It may be due to the following:
         elif self.scraper_details["type"] == "Home":
             print("Scraping Tweets from Home...")
 
-        self.progress.print_progress(0)
+        # Accept cookies to make the banner disappear
+        try:
+            accept_cookies_btn = self.driver.find_element(
+            "xpath", "//span[text()='Refuse non-essential cookies']/../../..")
+            accept_cookies_btn.click()
+        except NoSuchElementException:
+            pass
+
+        self.progress.print_progress(0, False, 0, no_tweets_limit)
 
         refresh_count = 0
         added_tweets = 0
         empty_count = 0
+        retry_cnt = 0
 
         while self.scroller.scrolling:
             try:
@@ -424,9 +460,9 @@ It may be due to the following:
                                     if not tweet.is_ad:
                                         self.data.append(tweet.tweet)
                                         added_tweets += 1
-                                        self.progress.print_progress(len(self.data))
+                                        self.progress.print_progress(len(self.data), False, 0, no_tweets_limit)
 
-                                        if len(self.data) >= self.max_tweets:
+                                        if len(self.data) >= self.max_tweets and not no_tweets_limit:
                                             self.scroller.scrolling = False
                                             break
                                     else:
@@ -440,10 +476,25 @@ It may be due to the following:
                     except NoSuchElementException:
                         continue
 
-                if len(self.data) >= self.max_tweets:
+                if len(self.data) >= self.max_tweets and not no_tweets_limit:
                     break
 
                 if added_tweets == 0:
+                    # Check if there is a button "Retry" and click on it with a regular basis until a certain amount of tries
+                    try:
+                        while retry_cnt < 15:
+                            retry_button = self.driver.find_element(
+                            "xpath", "//span[text()='Retry']/../../..")
+                            self.progress.print_progress(len(self.data), True, retry_cnt, no_tweets_limit)
+                            sleep(58)
+                            retry_button.click()
+                            retry_cnt += 1
+                            sleep(2)
+                    # There is no Retry button so the counter is reseted
+                    except NoSuchElementException:
+                        retry_cnt = 0
+                        self.progress.print_progress(len(self.data), False, 0, no_tweets_limit)
+
                     if empty_count >= 5:
                         if refresh_count >= 3:
                             print()
@@ -470,12 +521,13 @@ It may be due to the following:
 
         print("")
 
-        if len(self.data) >= self.max_tweets:
+        if len(self.data) >= self.max_tweets or no_tweets_limit:
             print("Scraping Complete")
         else:
             print("Scraping Incomplete")
 
-        print("Tweets: {} out of {}\n".format(len(self.data), self.max_tweets))
+        if not no_tweets_limit:
+            print("Tweets: {} out of {}\n".format(len(self.data), self.max_tweets))
 
         pass
 
