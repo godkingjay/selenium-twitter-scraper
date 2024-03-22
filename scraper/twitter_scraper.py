@@ -344,7 +344,6 @@ It may be due to the following:
                 url += "&f=live"
 
             self.driver.get(url)
-            self.driver.save_screenshot('screenshot5.png')
             sleep(3)
         pass
 
