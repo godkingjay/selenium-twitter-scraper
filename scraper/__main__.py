@@ -25,6 +25,13 @@ def main():
 
         try:
             parser.add_argument(
+                "--mail",
+                type=str,
+                default=os.getenv("TWITTER_MAIL"),
+                help="Your Twitter mail.",
+            )
+
+            parser.add_argument(
                 "--user",
                 type=str,
                 default=os.getenv("TWITTER_USERNAME"),
@@ -66,6 +73,14 @@ def main():
         )
 
         parser.add_argument(
+            "-ntl",
+            "--no_tweets_limit",
+            nargs='?',
+            default=False,
+            help="Set no limit to the number of tweets to scrape (will scrap until no more tweets are available).",
+        )
+
+        parser.add_argument(
             "-q",
             "--query",
             type=str,
@@ -95,6 +110,7 @@ def main():
 
         args = parser.parse_args()
 
+        USER_MAIL = args.mail
         USER_UNAME = args.user
         USER_PASSWORD = args.password
 
@@ -127,12 +143,14 @@ def main():
 
         if USER_UNAME is not None and USER_PASSWORD is not None:
             scraper = Twitter_Scraper(
+                mail=USER_MAIL,
                 username=USER_UNAME,
                 password=USER_PASSWORD,
             )
             scraper.login()
             scraper.scrape_tweets(
                 max_tweets=args.tweets,
+                no_tweets_limit= args.no_tweets_limit if args.no_tweets_limit is not None else True,
                 scrape_username=args.username,
                 scrape_hashtag=args.hashtag,
                 scrape_query=args.query,
