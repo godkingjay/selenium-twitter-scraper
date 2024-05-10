@@ -44,6 +44,7 @@ class Twitter_Scraper:
         scrape_poster_details=False,
         scrape_latest=True,
         scrape_top=False,
+        proxy=None,
     ):
         print("Initializing Twitter Scraper...")
         self.mail = mail
@@ -64,7 +65,7 @@ class Twitter_Scraper:
         self.max_tweets = max_tweets
         self.progress = Progress(0, max_tweets)
         self.router = self.go_to_home
-        self.driver = self._get_driver()
+        self.driver = self._get_driver(proxy)
         self.actions = ActionChains(self.driver)
         self.scroller = Scroller(self.driver)
         self._config_scraper(
@@ -119,7 +120,10 @@ class Twitter_Scraper:
             self.router = self.go_to_home
         pass
 
-    def _get_driver(self):
+    def _get_driver(
+        self,
+        proxy=None,
+    ):
         print("Setup WebDriver...")
         header = Headers().generate()["User-Agent"]
 
@@ -133,6 +137,8 @@ class Twitter_Scraper:
         browser_option.add_argument("--disable-notifications")
         browser_option.add_argument("--disable-popup-blocking")
         browser_option.add_argument("--user-agent={}".format(header))
+        if proxy is not None:
+            browser_option.add_argument("--proxy-server=%s" % proxy)
 
         # For Hiding Browser
         browser_option.add_argument("--headless")
