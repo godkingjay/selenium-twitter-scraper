@@ -20,13 +20,13 @@ class Progress:
         if no_tweets_limit:
             if waiting:
                 sys.stdout.write(
-                    "\rTweets scrapped : {} - waiting to access older tweets {} min on 15 min".format(
+                    "\rTweets scraped : {} - waiting to access older tweets {} min on 15 min".format(
                         current, retry_cnt
                     )
                 )
             else:
                 sys.stdout.write(
-                    "\rTweets scrapped : {}                                                  ".format(
+                    "\rTweets scraped : {}                                                  ".format(
                         current
                     )
                 )
