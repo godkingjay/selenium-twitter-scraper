@@ -70,7 +70,7 @@ class Tweet:
 
         try:
             self.reply_cnt = card.find_element(
-                "xpath", './/div[@data-testid="reply"]//span'
+                "xpath", './/button[@data-testid="reply"]//span'
             ).text
 
             if self.reply_cnt == "":
@@ -80,7 +80,7 @@ class Tweet:
 
         try:
             self.retweet_cnt = card.find_element(
-                "xpath", './/div[@data-testid="retweet"]//span'
+                "xpath", './/button[@data-testid="retweet"]//span'
             ).text
 
             if self.retweet_cnt == "":
@@ -90,7 +90,7 @@ class Tweet:
 
         try:
             self.like_cnt = card.find_element(
-                "xpath", './/div[@data-testid="like"]//span'
+                "xpath", './/button[@data-testid="like"]//span'
             ).text
 
             if self.like_cnt == "":
