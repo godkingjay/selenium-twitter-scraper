@@ -236,7 +236,7 @@ class Twitter_Scraper:
                     "xpath", "//input[@autocomplete='username']"
                 )
 
-                username.send_keys(self.mail)
+                username.send_keys(self.username)
                 username.send_keys(Keys.RETURN)
                 sleep(3)
                 break
