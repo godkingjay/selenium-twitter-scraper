@@ -1,9 +1,10 @@
 import os
 import sys
 import pandas as pd
-from progress import Progress
-from scroller import Scroller
-from tweet import Tweet
+from .progress import Progress
+from .scroller import Scroller
+from .tweet import Tweet
+import time
 
 from datetime import datetime
 from fake_headers import Headers
@@ -382,6 +383,7 @@ It may be due to the following:
         scrape_latest=True,
         scrape_top=False,
         scrape_poster_details=False,
+        tweet_urls=[''],
         router=None,
     ):
         self._config_scraper(
@@ -396,6 +398,8 @@ It may be due to the following:
 
         if router is None:
             router = self.router
+
+        has_error = False
 
         router()
 
@@ -472,6 +476,7 @@ It may be due to the following:
                                     else:
                                         continue
                                 else:
+                                    has_error = True
                                     continue
                             else:
                                 continue
@@ -511,6 +516,7 @@ It may be due to the following:
                     empty_count = 0
                     refresh_count = 0
             except StaleElementReferenceException:
+                has_error = True
                 sleep(2)
                 continue
             except KeyboardInterrupt:
@@ -523,7 +529,41 @@ It may be due to the following:
                 print(f"Error scraping tweets: {e}")
                 break
 
-        print("")
+        if len(self.data) == 0:
+            has_error = True
+
+        datal = list()
+        for i, tweet in enumerate(self.data):
+            try:
+                tweet_flat = list(tweet)
+                tweet_url = tweet_flat[13]
+
+                if tweet_url in tweet_urls:
+                    print("Existing tweet")
+                    continue
+                    
+                self.driver.get(tweet_url)  # Corrected line
+                sleep(3)
+    
+                tweet_cards = self.driver.find_elements(
+                    "xpath", '//article[@data-testid="tweet" and not(@disabled)]'
+                )
+                contents = tweet_cards[0].find_elements(
+                    "xpath",
+                    '(.//div[@data-testid="tweetText"])[1]/span | (.//div[@data-testid="tweetText"])[1]/a',
+                )
+                tweet_flat[4] = ""
+                
+                for index, content in enumerate(contents):
+                    tweet_flat[4] += content.text
+    
+                datal.append(tweet_flat)
+                time.sleep(1)
+            except:
+                print("Exception, skipping")
+                pass
+
+        self.data = datal
 
         if len(self.data) >= self.max_tweets or no_tweets_limit:
             print("Scraping Complete")
@@ -533,7 +573,7 @@ It may be due to the following:
         if not no_tweets_limit:
             print("Tweets: {} out of {}\n".format(len(self.data), self.max_tweets))
 
-        pass
+        return has_error
 
     def save_to_csv(self):
         print("Saving Tweets to CSV...")
