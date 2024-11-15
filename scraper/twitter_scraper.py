@@ -128,8 +128,6 @@ class Twitter_Scraper:
             self.router = self.go_to_home
         pass
 
-        print(134)
-
     def _get_driver(
         self,
         proxy=None,
@@ -350,7 +348,6 @@ It may be due to the following:
         pass
 
     def go_to_bookmarks(self):
-        print("356")
         if (
             self.scraper_details["bookmarks"] is False
             or self.scraper_details["bookmarks"] == ""
@@ -438,7 +435,7 @@ It may be due to the following:
             )
         elif self.scraper_details["type"] == "Bookmarks":
             print(
-                "Scraping Tweets from @{} bookmarks...".format(self.scraper_details["username"]))
+                "Scraping Tweets from bookmarks...".format(self.scraper_details["username"]))
         elif self.scraper_details["type"] == "Query":
             print(
                 "Scraping {} Tweets from {} search...".format(
