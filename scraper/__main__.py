@@ -1,8 +1,11 @@
+import json
 import os
 import sys
 import argparse
 import getpass
-from twitter_scraper import Twitter_Scraper
+
+from scraper.result import Result
+from scraper.twitter_scraper import Twitter_Scraper
 
 try:
     from dotenv import load_dotenv
@@ -36,6 +39,13 @@ def main():
                 type=str,
                 default=os.getenv("TWITTER_USERNAME"),
                 help="Your Twitter username.",
+            )
+
+            parser.add_argument(
+                "--filePath",
+                type=str,
+                default=None,
+                help="Your Save File Path.",
             )
 
             parser.add_argument(
@@ -113,14 +123,13 @@ def main():
         USER_MAIL = args.mail
         USER_UNAME = args.user
         USER_PASSWORD = args.password
+        FILE_PATH = args.filePath
 
         if USER_UNAME is None:
             USER_UNAME = input("Twitter Username: ")
 
         if USER_PASSWORD is None:
             USER_PASSWORD = getpass.getpass("Enter Password: ")
-
-        print()
 
         tweet_type_args = []
 
@@ -134,11 +143,11 @@ def main():
         additional_data: list = args.add.split(",")
 
         if len(tweet_type_args) > 1:
-            print("Please specify only one of --username, --hashtag, or --query.")
+            print(json.dumps(Result.fail_with_msg("Please specify only one of --username, --hashtag, or --query.").to_dict()))
             sys.exit(1)
 
         if args.latest and args.top:
-            print("Please specify either --latest or --top. Not both.")
+            print(json.dumps(Result.fail_with_msg("Please specify either --latest or --top. Not both.").to_dict()))
             sys.exit(1)
 
         if USER_UNAME is not None and USER_PASSWORD is not None:
@@ -146,11 +155,12 @@ def main():
                 mail=USER_MAIL,
                 username=USER_UNAME,
                 password=USER_PASSWORD,
+                file_path=FILE_PATH,
             )
-            scraper.login()
+            # scraper.login()
             scraper.scrape_tweets(
                 max_tweets=args.tweets,
-                no_tweets_limit= args.no_tweets_limit if args.no_tweets_limit is not None else True,
+                no_tweets_limit=args.no_tweets_limit if args.no_tweets_limit is not None else True,
                 scrape_username=args.username,
                 scrape_hashtag=args.hashtag,
                 scrape_query=args.query,
@@ -158,19 +168,17 @@ def main():
                 scrape_top=args.top,
                 scrape_poster_details="pd" in additional_data,
             )
-            scraper.save_to_csv()
+            scraper.save_to_json()
             if not scraper.interrupted:
                 scraper.driver.close()
         else:
-            print(
-                "Missing Twitter username or password environment variables. Please check your .env file."
-            )
+            print(json.dumps(Result.fail_with_msg("Missing Twitter username or password environment variables. Please check your .env file.").to_dict()))
             sys.exit(1)
     except KeyboardInterrupt:
-        print("\nScript Interrupted by user. Exiting...")
+        print(json.dumps(Result.fail_with_msg("Script Interrupted by user. Exiting...").to_dict()))
         sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}")
+        print(json.dumps(Result.fail_with_msg(f"Error: {e}").to_dict()))
         sys.exit(1)
     sys.exit(1)
 

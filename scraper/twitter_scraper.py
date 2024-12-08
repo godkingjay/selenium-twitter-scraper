@@ -1,9 +1,14 @@
+import json
 import os
+import pickle
 import sys
 import pandas as pd
-from progress import Progress
-from scroller import Scroller
-from tweet import Tweet
+from selenium.webdriver import FirefoxProfile
+
+from scraper.progress import Progress
+from scraper.result import Result
+from scraper.scroller import Scroller
+from scraper.tweet import Tweet
 
 from datetime import datetime
 from fake_headers import Headers
@@ -33,23 +38,25 @@ TWITTER_LOGIN_URL = "https://twitter.com/i/flow/login"
 
 class Twitter_Scraper:
     def __init__(
-        self,
-        mail,
-        username,
-        password,
-        max_tweets=50,
-        scrape_username=None,
-        scrape_hashtag=None,
-        scrape_query=None,
-        scrape_poster_details=False,
-        scrape_latest=True,
-        scrape_top=False,
-        proxy=None,
+            self,
+            mail,
+            username,
+            password,
+            file_path,
+            max_tweets=50,
+            scrape_username=None,
+            scrape_hashtag=None,
+            scrape_query=None,
+            scrape_poster_details=False,
+            scrape_latest=True,
+            scrape_top=False,
+            proxy=None,
     ):
         print("Initializing Twitter Scraper...")
         self.mail = mail
         self.username = username
         self.password = password
+        self.file_path = file_path
         self.interrupted = False
         self.tweet_ids = set()
         self.data = []
@@ -79,14 +86,14 @@ class Twitter_Scraper:
         )
 
     def _config_scraper(
-        self,
-        max_tweets=50,
-        scrape_username=None,
-        scrape_hashtag=None,
-        scrape_query=None,
-        scrape_latest=True,
-        scrape_top=False,
-        scrape_poster_details=False,
+            self,
+            max_tweets=50,
+            scrape_username=None,
+            scrape_hashtag=None,
+            scrape_query=None,
+            scrape_latest=True,
+            scrape_top=False,
+            scrape_poster_details=False,
     ):
         self.tweet_ids = set()
         self.data = []
@@ -121,11 +128,22 @@ class Twitter_Scraper:
         pass
 
     def _get_driver(
-        self,
-        proxy=None,
+            self,
+            proxy=None,
     ):
         print("Setup WebDriver...")
         header = Headers().generate()["User-Agent"]
+        # profile = FirefoxProfile("D:\\firefoxTest")
+        # profile.set_preference("browser.cache.disk.enable", True)
+        # profile.set_preference("browser.cache.memory.enable", True)
+        # profile.set_preference("browser.cache.offline.enable", True)
+        # profile.set_preference("network.cookie.lifetimePolicy", 0)  # 使 Cookie 正常过期
+        # profile.set_preference("network.cookie.keepSessionCookies", True)
+        # profile.set_preference("privacy.clearOnShutdown.cookies", False)
+        # profile.set_preference("privacy.clearOnShutdown.cache", False)
+        # profile.set_preference("privacy.clearOnShutdown.offlineApps", False)
+        # profile.set_preference("privacy.clearOnShutdown.sessions", False)
+        # profile.set_preference("privacy.clearOnShutdown.siteSettings", False)
 
         # browser_option = ChromeOptions()
         browser_option = FirefoxOptions()
@@ -139,9 +157,9 @@ class Twitter_Scraper:
         browser_option.add_argument("--user-agent={}".format(header))
         if proxy is not None:
             browser_option.add_argument("--proxy-server=%s" % proxy)
-
+        # browser_option.profile = profile
         # For Hiding Browser
-        browser_option.add_argument("--headless")
+        # browser_option.add_argument("--headless")
 
         try:
             # print("Initializing ChromeDriver...")
@@ -153,7 +171,6 @@ class Twitter_Scraper:
             driver = webdriver.Firefox(
                 options=browser_option,
             )
-
             print("WebDriver Setup Complete")
             return driver
         except WebDriverException:
@@ -186,9 +203,7 @@ class Twitter_Scraper:
         pass
 
     def login(self):
-        print()
         print("Logging in to Twitter...")
-
         try:
             self.driver.maximize_window()
             self.driver.get(TWITTER_LOGIN_URL)
@@ -199,9 +214,10 @@ class Twitter_Scraper:
             self._input_password()
 
             cookies = self.driver.get_cookies()
-
+            # with open("D:\\firefoxTest\\cookies.pkl", 'w') as filehandler:
+            #     json.dump(cookies, filehandler)
             auth_token = None
-
+            pickle.dump(cookies, open("D:\\firefoxTest\\cookies.pkl", 'wb'))
             for cookie in cookies:
                 if cookie["name"] == "auth_token":
                     auth_token = cookie["value"]
@@ -217,12 +233,9 @@ class Twitter_Scraper:
 """
                 )
 
-            print()
             print("Login Successful")
-            print()
         except Exception as e:
-            print()
-            print(f"Login Failed: {e}")
+            print(json.dumps(Result.fail_with_msg(f"Login Failed: {e}").to_dict()))
             sys.exit(1)
 
         pass
@@ -243,7 +256,6 @@ class Twitter_Scraper:
             except NoSuchElementException:
                 input_attempt += 1
                 if input_attempt >= 3:
-                    print()
                     print(
                         """There was an error inputting the username.
 
@@ -253,6 +265,7 @@ It may be due to the following:
 - Twitter is experiencing unusual activity"""
                     )
                     self.driver.quit()
+                    print(json.dumps(Result.fail_with_msg(f"input username failed").to_dict()))
                     sys.exit(1)
                 else:
                     print("Re-attempting to input username...")
@@ -283,7 +296,6 @@ It may be due to the following:
                 password = self.driver.find_element(
                     "xpath", "//input[@autocomplete='current-password']"
                 )
-
                 password.send_keys(self.password)
                 password.send_keys(Keys.RETURN)
                 sleep(3)
@@ -291,15 +303,15 @@ It may be due to the following:
             except NoSuchElementException:
                 input_attempt += 1
                 if input_attempt >= 3:
-                    print()
+
                     print(
                         """There was an error inputting the password.
-
 It may be due to the following:
 - Internet connection is unstable
 - Password is incorrect
 - Twitter is experiencing unusual activity"""
                     )
+                    print(json.dumps(Result.fail_with_msg(f"input password failed").to_dict()))
                     self.driver.quit()
                     sys.exit(1)
                 else:
@@ -313,8 +325,8 @@ It may be due to the following:
 
     def go_to_profile(self):
         if (
-            self.scraper_details["username"] is None
-            or self.scraper_details["username"] == ""
+                self.scraper_details["username"] is None
+                or self.scraper_details["username"] == ""
         ):
             print("Username is not set.")
             sys.exit(1)
@@ -325,8 +337,8 @@ It may be due to the following:
 
     def go_to_hashtag(self):
         if (
-            self.scraper_details["hashtag"] is None
-            or self.scraper_details["hashtag"] == ""
+                self.scraper_details["hashtag"] is None
+                or self.scraper_details["hashtag"] == ""
         ):
             print("Hashtag is not set.")
             sys.exit(1)
@@ -373,16 +385,16 @@ It may be due to the following:
         pass
 
     def scrape_tweets(
-        self,
-        max_tweets=50,
-        no_tweets_limit=False,
-        scrape_username=None,
-        scrape_hashtag=None,
-        scrape_query=None,
-        scrape_latest=True,
-        scrape_top=False,
-        scrape_poster_details=False,
-        router=None,
+            self,
+            max_tweets=50,
+            no_tweets_limit=False,
+            scrape_username=None,
+            scrape_hashtag=None,
+            scrape_query=None,
+            scrape_latest=True,
+            scrape_top=False,
+            scrape_poster_details=False,
+            router=None,
     ):
         self._config_scraper(
             max_tweets,
@@ -393,6 +405,13 @@ It may be due to the following:
             scrape_top,
             scrape_poster_details,
         )
+
+        self.driver.get("https://twitter.com/home")
+        cookies = pickle.load(open("D:\\firefoxTest\\cookies.pkl", 'rb'))
+        for cookie in cookies:
+            if 'sameSite' in cookie:
+                del cookie['sameSite']
+            self.driver.add_cookie(cookie)
 
         if router is None:
             router = self.router
@@ -421,7 +440,7 @@ It may be due to the following:
         # Accept cookies to make the banner disappear
         try:
             accept_cookies_btn = self.driver.find_element(
-            "xpath", "//span[text()='Refuse non-essential cookies']/../../..")
+                "xpath", "//span[text()='Refuse non-essential cookies']/../../..")
             accept_cookies_btn.click()
         except NoSuchElementException:
             pass
@@ -488,9 +507,9 @@ It may be due to the following:
                     try:
                         while retry_cnt < 15:
                             retry_button = self.driver.find_element(
-                            "xpath", "//span[text()='Retry']/../../..")
+                                "xpath", "//span[text()='Retry']/../../..")
                             self.progress.print_progress(len(self.data), True, retry_cnt, no_tweets_limit)
-                            sleep(58)
+                            sleep(30)
                             retry_button.click()
                             retry_cnt += 1
                             sleep(2)
@@ -501,7 +520,6 @@ It may be due to the following:
 
                     if empty_count >= 5:
                         if refresh_count >= 3:
-                            print()
                             print("No more tweets to scrape")
                             break
                         refresh_count += 1
@@ -523,8 +541,6 @@ It may be due to the following:
                 print(f"Error scraping tweets: {e}")
                 break
 
-        print("")
-
         if len(self.data) >= self.max_tweets or no_tweets_limit:
             print("Scraping Complete")
         else:
@@ -534,6 +550,85 @@ It may be due to the following:
             print("Tweets: {} out of {}\n".format(len(self.data), self.max_tweets))
 
         pass
+
+    def save_to_json(self):
+        print("Saving Tweets to JSON...")
+        tweets_data = []
+        for tweet in self.data:
+            tweet_info = {
+                "Name": tweet[0],
+                "Handle": tweet[1],
+                "Timestamp": tweet[2],
+                "Verified": tweet[3],
+                "Content": tweet[4],
+                "Comments": tweet[5],
+                "Retweets": tweet[6],
+                "Likes": tweet[7],
+                "Analytics": tweet[8],
+                "Tags": tweet[9],
+                "Mentions": tweet[10],
+                "Emojis": tweet[11],
+                "Profile Image": tweet[12],
+                "Tweet_Link": tweet[13],
+                "Tweet_ID": f"{tweet[14]}"
+            }
+
+            if self.scraper_details["poster_details"]:
+                tweet_info["Tweeter ID"] = f"user_id:{tweet[15]}"
+                tweet_info["Following"] = tweet[16]
+                tweet_info["Followers"] = tweet[17]
+
+            tweets_data.append(tweet_info)
+        with open(self.file_path, 'w', encoding='utf-8') as json_file:
+            json.dump(tweets_data, json_file, ensure_ascii=False, indent=4)
+        print("JSON Saved: {}".format(self.file_path))
+        print(json.dumps(Result.ok("".format(self.file_path)).to_dict()))
+
+    def save_to_json_limit(self, batch_size):
+        print("Saving Tweets to JSON...")
+        now = datetime.now()
+        folder_path = "./tweets/"
+
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+            print("Created Folder: {}".format(folder_path))
+        tweets_data = []
+        current_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+        file_path = f"{folder_path}{current_time}_tweets_1-{len(self.data)}.json"
+        with open(file_path, 'a', encoding='utf-8') as json_file:
+            for idx, tweet in enumerate(self.data):
+                tweet_info = {
+                    "Name": tweet[0],
+                    "Handle": tweet[1],
+                    "Timestamp": tweet[2],
+                    "Verified": tweet[3],
+                    "Content": tweet[4],
+                    "Comments": tweet[5],
+                    "Retweets": tweet[6],
+                    "Likes": tweet[7],
+                    "Analytics": tweet[8],
+                    "Tags": tweet[9],
+                    "Mentions": tweet[10],
+                    "Emojis": tweet[11],
+                    "Profile Image": tweet[12],
+                    "Tweet Link": tweet[13],
+                    "Tweet ID": f"tweet_id:{tweet[14]}"
+                }
+
+                if self.scraper_details["poster_details"]:
+                    tweet_info["Tweeter ID"] = f"user_id:{tweet[15]}"
+                    tweet_info["Following"] = tweet[16]
+                    tweet_info["Followers"] = tweet[17]
+
+                tweets_data.append(tweet_info)
+                if len(tweets_data) >= batch_size:
+                    json.dump(tweets_data, json_file, ensure_ascii=False)
+                    json_file.write('\n')
+                    tweets_data = []
+            if tweets_data:
+                json.dump(tweets_data, json_file, ensure_ascii=False)
+                json_file.write('\n')
+            print("JSON Saved: {}".format(file_path))
 
     def save_to_csv(self):
         print("Saving Tweets to CSV...")
