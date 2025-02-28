@@ -37,6 +37,7 @@ class Twitter_Scraper:
         mail,
         username,
         password,
+        headlessState,
         max_tweets=50,
         scrape_username=None,
         scrape_hashtag=None,
@@ -50,6 +51,7 @@ class Twitter_Scraper:
         self.mail = mail
         self.username = username
         self.password = password
+        self.headlessState = headlessState
         self.interrupted = False
         self.tweet_ids = set()
         self.data = []
@@ -125,7 +127,10 @@ class Twitter_Scraper:
         proxy=None,
     ):
         print("Setup WebDriver...")
-        header = Headers().generate()["User-Agent"]
+        # header = Headers().generate()["User-Agent"] 
+
+        # User agent of a andoird smartphone device
+        header="Mozilla/5.0 (Linux; Android 11; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.87 Mobile Safari/537.36"
 
         # browser_option = ChromeOptions()
         browser_option = FirefoxOptions()
@@ -140,8 +145,11 @@ class Twitter_Scraper:
         if proxy is not None:
             browser_option.add_argument("--proxy-server=%s" % proxy)
 
-        # For Hiding Browser
-        browser_option.add_argument("--headless")
+        # Option to hide browser or not
+        # If not yes then skips the headless
+        if self.headlessState == 'yes':
+            # For Hiding Browser
+            browser_option.add_argument("--headless")
 
         try:
             # print("Initializing ChromeDriver...")
