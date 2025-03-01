@@ -1,3 +1,7 @@
+import time
+import random
+
+
 class Scroller:
     def __init__(self, driver) -> None:
         self.driver = driver

@@ -199,6 +199,7 @@ class Twitter_Scraper:
 
         try:
             self.driver.maximize_window()
+            self.driver.execute_script("document.body.style.zoom='150%'") #set zoom to 150%
             self.driver.get(TWITTER_LOGIN_URL)
             sleep(3)
 
