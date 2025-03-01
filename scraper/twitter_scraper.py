@@ -498,7 +498,7 @@ It may be due to the following:
                             retry_button = self.driver.find_element(
                             "xpath", "//span[text()='Retry']/../../..")
                             self.progress.print_progress(len(self.data), True, retry_cnt, no_tweets_limit)
-                            sleep(58)
+                            sleep(300)
                             retry_button.click()
                             retry_cnt += 1
                             sleep(2)
