@@ -44,6 +44,13 @@ def main():
                 default=os.getenv("TWITTER_PASSWORD"),
                 help="Your Twitter password.",
             )
+
+            parser.add_argument(
+                "--headlessState",
+                type=str,
+                default=os.getenv("HEADLESS"),
+                help="Headless mode? [yes/no]"
+            )
         except Exception as e:
             print(f"Error retrieving environment variables: {e}")
             sys.exit(1)
@@ -113,12 +120,16 @@ def main():
         USER_MAIL = args.mail
         USER_UNAME = args.user
         USER_PASSWORD = args.password
+        HEADLESS_MODE= args.headlessState
 
         if USER_UNAME is None:
             USER_UNAME = input("Twitter Username: ")
 
         if USER_PASSWORD is None:
             USER_PASSWORD = getpass.getpass("Enter Password: ")
+
+        if HEADLESS_MODE is None:
+            HEADLESS_MODE - str(input("Headless?[Yes/No]")).lower()
 
         print()
 
@@ -146,6 +157,7 @@ def main():
                 mail=USER_MAIL,
                 username=USER_UNAME,
                 password=USER_PASSWORD,
+                headlessState=HEADLESS_MODE
             )
             scraper.login()
             scraper.scrape_tweets(
