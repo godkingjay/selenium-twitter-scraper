@@ -80,6 +80,12 @@ def main():
         )
 
         parser.add_argument(
+            "--bookmarks",
+            action='store_true',
+            help="Twitter bookmarks. Scrape tweets from your bookmarks.",
+        )
+
+        parser.add_argument(
             "-ntl",
             "--no_tweets_limit",
             nargs='?',
@@ -141,11 +147,13 @@ def main():
             tweet_type_args.append(args.hashtag)
         if args.query is not None:
             tweet_type_args.append(args.query)
+        if args.bookmarks is not False:
+            tweet_type_args.append(args.query)
 
         additional_data: list = args.add.split(",")
 
         if len(tweet_type_args) > 1:
-            print("Please specify only one of --username, --hashtag, or --query.")
+            print("Please specify only one of --username, --hashtag, --bookmarks, or --query.")
             sys.exit(1)
 
         if args.latest and args.top:
@@ -165,6 +173,7 @@ def main():
                 no_tweets_limit= args.no_tweets_limit if args.no_tweets_limit is not None else True,
                 scrape_username=args.username,
                 scrape_hashtag=args.hashtag,
+                scrape_bookmarks=args.bookmarks,
                 scrape_query=args.query,
                 scrape_latest=args.latest,
                 scrape_top=args.top,

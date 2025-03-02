@@ -42,6 +42,7 @@ class Twitter_Scraper:
         scrape_username=None,
         scrape_hashtag=None,
         scrape_query=None,
+        scrape_bookmarks=False,
         scrape_poster_details=False,
         scrape_latest=True,
         scrape_top=False,
@@ -60,6 +61,7 @@ class Twitter_Scraper:
             "type": None,
             "username": None,
             "hashtag": None,
+            "bookmarks": False,
             "query": None,
             "tab": None,
             "poster_details": False,
@@ -74,6 +76,7 @@ class Twitter_Scraper:
             max_tweets,
             scrape_username,
             scrape_hashtag,
+            scrape_bookmarks,
             scrape_query,
             scrape_latest,
             scrape_top,
@@ -85,6 +88,7 @@ class Twitter_Scraper:
         max_tweets=50,
         scrape_username=None,
         scrape_hashtag=None,
+        scrape_bookmarks=False,
         scrape_query=None,
         scrape_latest=True,
         scrape_top=False,
@@ -101,6 +105,7 @@ class Twitter_Scraper:
             "hashtag": str(scrape_hashtag).replace("#", "")
             if scrape_hashtag is not None
             else None,
+            "bookmarks": scrape_bookmarks,
             "query": scrape_query,
             "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
             "poster_details": scrape_poster_details,
@@ -114,6 +119,9 @@ class Twitter_Scraper:
         elif scrape_hashtag is not None:
             self.scraper_details["type"] = "Hashtag"
             self.router = self.go_to_hashtag
+        elif scrape_bookmarks is not False:
+            self.scraper_details["type"] = "Bookmarks"
+            self.router = self.go_to_bookmarks
         elif scrape_query is not None:
             self.scraper_details["type"] = "Query"
             self.router = self.go_to_search
@@ -348,6 +356,20 @@ It may be due to the following:
             sleep(3)
         pass
 
+    def go_to_bookmarks(self):
+        if (
+            self.scraper_details["bookmarks"] is False
+            or self.scraper_details["bookmarks"] == ""
+        ):
+            print("Bookmarks is not set.")
+            sys.exit(1)
+        else:
+            url = f"https://twitter..com/i/bookmarks"
+
+            self.driver.get(url)
+            sleep(3)
+        pass
+
     def go_to_search(self):
         if self.scraper_details["query"] is None or self.scraper_details["query"] == "":
             print("Query is not set.")
@@ -387,6 +409,7 @@ It may be due to the following:
         no_tweets_limit=False,
         scrape_username=None,
         scrape_hashtag=None,
+        scrape_bookmarks=False,
         scrape_query=None,
         scrape_latest=True,
         scrape_top=False,
@@ -397,6 +420,7 @@ It may be due to the following:
             max_tweets,
             scrape_username,
             scrape_hashtag,
+            scrape_bookmarks,
             scrape_query,
             scrape_latest,
             scrape_top,
@@ -418,6 +442,9 @@ It may be due to the following:
                     self.scraper_details["tab"], self.scraper_details["hashtag"]
                 )
             )
+        elif self.scraper_details["type"] == "Bookmarks":
+            print(
+                "Scraping Tweets from bookmarks...".format(self.scraper_details["username"]))
         elif self.scraper_details["type"] == "Query":
             print(
                 "Scraping {} Tweets from {} search...".format(
