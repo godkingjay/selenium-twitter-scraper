@@ -103,6 +103,12 @@ options:                description
                             -ht javascript
                             --hashtag=javascript
 
+-l, --list              : List ID. Scrape tweets from a list. The
+                          ID is taken from the x.com/list/... URL.
+                          e.g.
+                           -l "1324132413151"
+                           --list "1324132413151"
+
 -q, --query             : Twitter query or search.
                           Scrape tweets from a query or search.
                           e.g.
