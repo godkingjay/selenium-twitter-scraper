@@ -90,6 +90,7 @@ class Twitter_Scraper:
         scrape_hashtag=None,
         scrape_bookmarks=False,
         scrape_query=None,
+        scrape_list=None,
         scrape_latest=True,
         scrape_top=False,
         scrape_poster_details=False,
@@ -107,6 +108,7 @@ class Twitter_Scraper:
             else None,
             "bookmarks": scrape_bookmarks,
             "query": scrape_query,
+            "list": scrape_list,
             "tab": "Latest" if scrape_latest else "Top" if scrape_top else "Latest",
             "poster_details": scrape_poster_details,
         }
@@ -125,6 +127,9 @@ class Twitter_Scraper:
         elif scrape_query is not None:
             self.scraper_details["type"] = "Query"
             self.router = self.go_to_search
+        elif scrape_list is not None:
+            self.scraper_details["type"] = "List"
+            self.router = self.go_to_list
         else:
             self.scraper_details["type"] = "Home"
             self.router = self.go_to_home
@@ -383,6 +388,16 @@ It may be due to the following:
             sleep(3)
         pass
 
+    def go_to_list(self):
+        if self.scraper_details["list"] is None or self.scraper_details["list"] == "":
+            print("List is not set.")
+            sys.exit(1)
+        else:
+            url = f"https://x.com/i/lists/{self.scraper_details['list']}"
+            self.driver.get(url)
+            sleep(3)
+        pass
+
     def get_tweet_cards(self):
         self.tweet_cards = self.driver.find_elements(
             "xpath", '//article[@data-testid="tweet" and not(@disabled)]'
@@ -411,6 +426,7 @@ It may be due to the following:
         scrape_hashtag=None,
         scrape_bookmarks=False,
         scrape_query=None,
+        scrape_list=None,
         scrape_latest=True,
         scrape_top=False,
         scrape_poster_details=False,
@@ -422,6 +438,7 @@ It may be due to the following:
             scrape_hashtag,
             scrape_bookmarks,
             scrape_query,
+            scrape_list,
             scrape_latest,
             scrape_top,
             scrape_poster_details,
